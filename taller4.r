@@ -22,10 +22,10 @@ fit_visual <- eyefit(vg)
 
 # Ajuste REML
 model_reml <- likfit(ca20, 
-                     ini.cov.pars = fit_visual[[1]]$cov.pars,
+                     ini.cov.pars = c(123.45, 182.39),
                      fix.nugget = FALSE,
-                     nugget = fit_visual[[1]]$nugget,
-                     cov.model = fit_visual[[1]]$cov.model,
+                     nugget = 45.88,
+                     cov.model = 'matern',
                      lik.method = "REML")
 
 ## Gráfco ##
@@ -92,6 +92,9 @@ print(geary_test)
 
 # Pregunta 3: Ajustar los Modelos (M1, M2 y M3) y Seleccionar el Mejor Modelo Basado en AIC
 
+# Ajuste de modelos y cálculo de AIC
+
+
 # Modelo M1 (Ruido Gaussiano)
 model_M1 <- lm(SMR ~ x1 + x2 + I(x1 * x2), data = london_gen)
 AIC_M1 <- AIC(model_M1)
@@ -104,13 +107,31 @@ AIC_M2 <- AIC(model_M2)
 model_M3 <- spautolm(SMR ~ x1 + x2 + I(x1 * x2), data = london_gen, listw = london_w, family = "CAR")
 AIC_M3 <- AIC(model_M3)
 
-# Comparación de Modelos
-AIC_values <- data.frame(Model = c("M1", "M2", "M3"), AIC = c(AIC_M1, AIC_M2, AIC_M3))
+# Crear tabla de comparación de AIC con dplyr
+AIC_values <- data.frame(Model = c("M1 (Gaussiano)", "M2 (SAR)", "M3 (CAR)"),
+                         AIC = c(AIC_M1, AIC_M2, AIC_M3)) %>%
+  arrange(AIC) %>%  # Ordenar por AIC ascendente
+  mutate(Best = if_else(AIC == min(AIC), "Sí", "No"))  # Marcar el mejor modelo
+
+# Crear la tabla de comparación de AIC con dplyr
+AIC_values <- data.frame(Model = c("M1: Regresión Lineal Simple (Gaussiano)", 
+"M2: Regresión espacial con erroes SAR", 
+"M3: Regresión espacial con errores CAR"),
+                         AIC = c(AIC_M1, AIC_M2, AIC_M3)) %>%
+  arrange(AIC)
+
+# Mostrar la tabla de AIC
 print(AIC_values)
 
-# Seleccionar el modelo con menor AIC como el mejor modelo
-best_model <- list(M1 = model_M1, M2 = model_M2, M3 = model_M3)[[which.min(AIC_values$AIC)]]
-summary(best_model)
+# Seleccionar el mejor modelo basado en la tabla
+best_model_name <- AIC_values$Model[1]
+best_model <- switch(best_model_name,
+                     "M1: Regresión Lineal Simple (Gaussiano)" = model_M1,
+                     "M2: Regresión espacial con erroes SAR" = model_M2,
+                     "M3: Regresión espacial con errores CAR" = model_M3)
+
+# Mostrar el resumen del mejor modelo
+print(best_model)
 
 ## 4
 
